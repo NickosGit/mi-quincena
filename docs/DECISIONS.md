@@ -17,4 +17,5 @@
 - Decided (F2): landing puts the Google button directly under the one-line pitch, above the steps; on a 375px screen it was below the fold (packet persona: "distrusts anything that asks to log in before showing value"). F7's demo button belongs in the same spot.
 - Verified (F2, 2026-10-18): `schema.sql` applied to the Supabase project; `rls.sql` 16/16 PASS (run by Nicolas); signed-out REST read of `installments` returns 401 `permission denied`; Google sign-in on localhost reached `/dashboard` (server log: callback 307 → dashboard 200).
 - Pending (F2): the two-Google-account check through the client (packet §10.5) is only meaningful once account A has saved rows, so it moves to F5's acceptance.
-- Tomorrow's first move: Deploy 1 — GitHub repo + Vercel, add the Vercel URL to Supabase redirect URLs and Google origins, sign in from a phone.
+- Deploy 1 (2026-10-18): https://mi-quincena-tau.vercel.app from github.com/NickosGit/mi-quincena (main). Live checks: `/` 200 with the Google button (env wired), signed-out `/dashboard` → 307 to `/`, security headers present. Nicolas signed in with Google from his phone and saw the empty dashboard.
+- Tomorrow's first move: F3. Needs `fixtures/clean.png` and `fixtures/blurred.png` (the brief's fictional calendars).
