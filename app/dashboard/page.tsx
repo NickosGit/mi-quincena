@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { DeleteAll } from "@/components/DeleteAll";
+import { PrePurchase } from "@/components/PrePurchase";
 import { QuincenaCards } from "@/components/QuincenaCards";
 import { ScanFlow } from "@/components/ScanFlow";
 import { upcomingCards, type SavedInstallment } from "@/lib/review";
@@ -50,6 +51,8 @@ export default async function DashboardPage() {
         )}
 
         <ScanFlow today={today} />
+
+        <PrePurchase saved={saved} today={today} />
 
         {saved.length > 0 && <DeleteAll />}
       </main>
