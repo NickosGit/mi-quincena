@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
+import { ScanFlow } from "@/components/ScanFlow";
 import { getUser } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
             </p>
           </div>
         )}
+        <ScanFlow />
       </main>
     </>
   );

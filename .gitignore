@@ -28,3 +28,6 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tesseract.js language cache (node scripts)
+*.traineddata

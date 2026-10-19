@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
-export function GoogleButton({ next = "/dashboard" }: { next?: string }) {
+export function GoogleButton() {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -12,11 +12,12 @@ export function GoogleButton({ next = "/dashboard" }: { next?: string }) {
     setBusy(true);
     setFailed(false);
     const supabase = createClient();
-    const redirectTo = new URL("/auth/callback", window.location.origin);
-    redirectTo.searchParams.set("next", next);
+    // No query string: Supabase matches redirect URLs exactly for hosts other than
+    // the Site URL, so "/auth/callback?next=…" was rejected on localhost. The
+    // callback lands on /dashboard by default.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: redirectTo.toString() },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) {
       setBusy(false);
