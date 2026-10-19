@@ -114,7 +114,7 @@ export function ReviewRows({
                 </p>
               )}
               <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 truncate text-sm text-muted">Texto leído: {row.source_line || "—"}</p>
+                <p className="min-w-0 truncate text-base text-muted">Texto leído: {row.source_line || "—"}</p>
                 <button
                   type="button"
                   onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}

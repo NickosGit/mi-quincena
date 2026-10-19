@@ -41,7 +41,7 @@ export function PrePurchase({ saved, today }: { saved: SavedInstallment[]; today
           className="min-h-12 rounded-xl border border-line bg-background px-3 text-lg"
           aria-describedby="pp-amount-help"
         />
-        <span id="pp-amount-help" className="text-sm text-muted">
+        <span id="pp-amount-help" className="text-base text-muted">
           {amountError ?? "De $1 a $100,000."}
         </span>
       </label>
@@ -62,7 +62,7 @@ export function PrePurchase({ saved, today }: { saved: SavedInstallment[]; today
           </select>
         </label>
         <label className="flex flex-col gap-1 text-base">
-          ¿Cuánto cobras por quincena? <span className="text-sm text-muted">(opcional)</span>
+          ¿Cuánto cobras por quincena? <span className="text-base text-muted">(opcional)</span>
           <input
             inputMode="decimal"
             value={pay}
@@ -100,7 +100,7 @@ export function PrePurchase({ saved, today }: { saved: SavedInstallment[]; today
       )}
 
       <p className="text-base text-muted">Tú decides. Mi Quincena solo te muestra la cuenta.</p>
-      <p className="text-sm text-muted">Tu pago por quincena no se guarda.</p>
+      <p className="text-base text-muted">Tu pago por quincena no se guarda.</p>
     </section>
   );
 }

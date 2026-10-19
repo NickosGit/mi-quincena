@@ -62,6 +62,8 @@ export async function geminiRows(text: string, today: string, config: GeminiConf
         temperature: 0,
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
+        // Default thinking took up to 254 s on the blurred fixture; "low" answers in ~5 s.
+        thinkingConfig: { thinkingLevel: "low" },
       },
     }),
     signal: AbortSignal.timeout(config.timeoutMs ?? 45_000),

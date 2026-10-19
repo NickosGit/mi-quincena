@@ -17,8 +17,8 @@ export function QuincenaCards({ cards }: { cards: QuincenaCard[] }) {
               </span>
               <span className="flex items-center justify-between text-base text-muted">
                 {card.plans === 1 ? "1 plan" : `${card.plans} planes`}
-                <span className="text-sm group-open:hidden">Ver pagos ▾</span>
-                <span className="hidden text-sm group-open:inline">Ocultar ▴</span>
+                <span className="text-base group-open:hidden">Ver pagos ▾</span>
+                <span className="hidden text-base group-open:inline">Ocultar ▴</span>
               </span>
             </summary>
             <ul className="flex flex-col gap-2 border-t border-line p-4">

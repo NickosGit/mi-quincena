@@ -26,6 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es-MX" className={`${geistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col text-base">
         <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-10">{children}</div>
+        <footer className="mx-auto w-full max-w-xl border-t border-line px-4 py-6 text-base text-muted">
+          Mi Quincena no recibe dinero de tiendas ni prestamistas. No guardamos tus capturas.
+        </footer>
       </body>
     </html>
   );

@@ -35,6 +35,14 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </p>
       )}
 
+      <Link
+        href="/demo"
+        className="flex min-h-14 items-center justify-center rounded-2xl bg-coral px-5 text-lg font-bold text-white"
+      >
+        Probar con datos ficticios
+      </Link>
+      <p className="-mt-3 text-base text-muted">Sin cuenta y sin guardar nada.</p>
+
       {user ? (
         <Link
           href="/dashboard"
