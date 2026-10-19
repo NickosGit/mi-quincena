@@ -1,0 +1,140 @@
+"""Generates the fictional BNPL calendar fixtures (no real people, no real providers).
+
+    python scripts/make_fixtures.py        # needs Pillow + numpy
+
+Writes:
+  fixtures/clean.png      phone screenshot, 12 installments
+  fixtures/blurred.png    simulated phone photo of the same screen: tilted, blurred,
+                          JPEG-compressed, with glare over two date cells (the brief's
+                          failure: day "1" misread and a January date lost)
+  fixtures/expected.json  ground truth rows
+
+Ground truth: the 1st Nov 2026 quincena owes $2,490.50 (Súper 349.00 + Celular
+1,249.00 + Tenis 892.50). Losing the "1 nov" date drops it to $2,141.50.
+"""
+
+import io
+import json
+import random
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "fixtures"
+FONTS = Path("C:/Windows/Fonts")
+
+MONTHS = {11: "nov", 12: "dic", 1: "ene", 2: "feb"}
+
+# (iso date, label, amount). Three plans in one unbranded "app" calendar.
+ROWS = [
+    ("2026-11-01", "Súper", 349.00),
+    ("2026-11-05", "Celular", 1249.00),
+    ("2026-11-12", "Tenis", 892.50),
+    ("2026-11-20", "Celular", 1249.00),
+    ("2026-11-27", "Tenis", 892.50),
+    ("2026-12-01", "Súper", 349.00),
+    ("2026-12-05", "Celular", 1249.00),
+    ("2026-12-12", "Tenis", 892.50),
+    ("2026-12-20", "Celular", 1249.00),
+    ("2026-12-27", "Tenis", 892.50),
+    ("2027-01-01", "Súper", 349.00),
+    ("2027-02-01", "Súper", 349.00),
+]
+# Indexes whose date cell gets glare in the blurred photo.
+GLARE_ROWS = (0, 10)
+
+W, H = 1080, 2300
+NAVY = (31, 42, 68)
+GREY = (110, 116, 128)
+LINE = (226, 228, 232)
+BG = (246, 247, 249)
+
+
+def font(name: str, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(str(FONTS / name), size)
+
+
+def date_text(iso: str) -> str:
+    y, m, d = (int(p) for p in iso.split("-"))
+    return f"{d} {MONTHS[m]} {y}"
+
+
+def money(amount: float) -> str:
+    return f"${amount:,.2f}"
+
+
+def render_clean() -> tuple[Image.Image, list[tuple[int, int, int, int]]]:
+    img = Image.new("RGB", (W, H), BG)
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, W, 230], fill=NAVY)
+    d.text((60, 70), "Calendario de pagos", font=font("arialbd.ttf", 64), fill="white")
+    d.text((60, 160), "Tus próximos pagos", font=font("arial.ttf", 38), fill=(205, 212, 225))
+
+    date_boxes = []
+    top, row_h = 290, 148
+    d.rounded_rectangle([30, top - 20, W - 30, top + row_h * len(ROWS) + 10], radius=28, fill="white")
+    f_date, f_label, f_amt = font("arialbd.ttf", 46), font("arial.ttf", 36), font("arialbd.ttf", 50)
+    for i, (iso, label, amount) in enumerate(ROWS):
+        y = top + i * row_h
+        text = date_text(iso)
+        d.text((70, y + 18), text, font=f_date, fill=NAVY)
+        x0, y0, x1, y1 = d.textbbox((70, y + 18), text, font=f_date)
+        date_boxes.append((x0, y0, x1, y1))
+        d.text((70, y + 78), label, font=f_label, fill=GREY)
+        amt = money(amount)
+        aw = d.textlength(amt, font=f_amt)
+        d.text((W - 70 - aw, y + 40), amt, font=f_amt, fill=NAVY)
+        if i < len(ROWS) - 1:
+            d.line([70, y + row_h - 4, W - 70, y + row_h - 4], fill=LINE, width=2)
+
+    d.text((60, H - 110), "Datos ficticios · calendario de prueba sin marca", font=font("arial.ttf", 32), fill=GREY)
+    return img, date_boxes
+
+
+def render_blurred(clean: Image.Image, date_boxes) -> Image.Image:
+    rnd = random.Random(10)
+    img = clean.copy()
+
+    # Glare: a soft bright blob over the first characters of two date cells.
+    glare = Image.new("L", img.size, 0)
+    gd = ImageDraw.Draw(glare)
+    for i in GLARE_ROWS:
+        x0, y0, x1, y1 = date_boxes[i]
+        cx, cy = x0 + 45, (y0 + y1) // 2
+        gd.ellipse([cx - 120, cy - 55, cx + 150, cy + 55], fill=235)
+    glare = glare.filter(ImageFilter.GaussianBlur(22))
+    img = Image.composite(Image.new("RGB", img.size, (255, 255, 250)), img, glare)
+
+    # Phone photo: slight tilt, softness, uneven light, low resolution, JPEG.
+    img = img.rotate(-3.2, resample=Image.BICUBIC, expand=True, fillcolor=(60, 60, 64))
+    img = img.filter(ImageFilter.GaussianBlur(2.2))
+    arr = np.asarray(img).astype(np.float32)
+    h, w = arr.shape[:2]
+    shade = np.linspace(0.78, 1.04, w)[None, :, None] * np.linspace(1.0, 0.85, h)[:, None, None]
+    noise = np.random.default_rng(10).normal(0, 7, arr.shape)
+    arr = np.clip(arr * shade + noise, 0, 255).astype(np.uint8)
+    img = Image.fromarray(arr)
+    small = img.resize((int(w * 0.5), int(h * 0.5)), Image.BILINEAR)
+    buf = io.BytesIO()
+    small.save(buf, "JPEG", quality=rnd.choice([28, 30, 32]))
+    return Image.open(io.BytesIO(buf.getvalue())).convert("RGB")
+
+
+def main() -> None:
+    OUT.mkdir(exist_ok=True)
+    clean, boxes = render_clean()
+    clean.save(OUT / "clean.png", optimize=True)
+    render_blurred(clean, boxes).save(OUT / "blurred.png", optimize=True)
+    expected = {
+        "note": "Fictional, unbranded test data. Generated by scripts/make_fixtures.py.",
+        "rows": [{"due_date": d, "label": l, "amount": a} for d, l, a in ROWS],
+        "glare_rows": list(GLARE_ROWS),
+    }
+    (OUT / "expected.json").write_text(json.dumps(expected, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("wrote", ", ".join(p.name for p in sorted(OUT.iterdir())))
+
+
+if __name__ == "__main__":
+    main()
