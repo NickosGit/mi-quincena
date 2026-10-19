@@ -1,31 +1,54 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { AiTag } from "@/components/AiTag";
 import { UploadCapture } from "@/components/UploadCapture";
+import { requestRows } from "@/lib/extract-client";
+import type { ExtractSource } from "@/lib/extract";
 import { formatDate, quincenaLabel } from "@/lib/format";
-import { checkCompleteness, completeRows, regexRows, todayIso } from "@/lib/parse";
+import { checkCompleteness, completeRows, todayIso, type Completeness, type ParsedRow } from "@/lib/parse";
 import { formatMXN, toCents, totalsByQuincena } from "@/lib/quincena";
 
-/** Upload → OCR text → rows → never-undercount guard → totals (only when complete). */
-export function ScanFlow() {
-  const [text, setText] = useState<string | null>(null);
+interface Result {
+  rows: ParsedRow[];
+  source: ExtractSource;
+  check: Completeness;
+  notice?: string;
+}
 
-  const result = useMemo(() => {
-    if (text === null) return null;
-    const today = todayIso();
-    const rows = regexRows(text, today);
-    return { rows, check: checkCompleteness(rows, text, today) };
-  }, [text]);
+/** Upload → OCR text → /api/extract → never-undercount guard → totals (only when complete). */
+export function ScanFlow({ demo = false }: { demo?: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<Result | null>(null);
+
+  async function onText(text: string) {
+    setBusy(true);
+    setResult(null);
+    const { rows, source, notice } = await requestRows(text, demo);
+    // The server already ran the guard; run it again here against the same raw text.
+    setResult({ rows, source, notice, check: checkCompleteness(rows, text, todayIso()) });
+    setBusy(false);
+  }
 
   return (
     <section className="flex flex-col gap-4">
-      <UploadCapture onText={setText} />
+      <UploadCapture onText={onText} />
+
+      {busy && (
+        <p role="status" className="rounded-2xl border border-line bg-card p-4 text-base font-semibold">
+          Ordenando tus pagos…
+        </p>
+      )}
 
       {result && (
         <div className="flex flex-col gap-4">
-          <p className="text-base text-muted">Lectura automática sin IA</p>
+          <p className="text-base text-muted">
+            {result.source === "llm"
+              ? "Ordenado con IA (Gemini) a partir del texto de tu captura. Revisa cada pago."
+              : "Lectura automática sin IA"}
+          </p>
+          {result.notice && <p className="text-base text-muted">{result.notice}</p>}
 
           {result.check.status === "empty" && (
             <p role="status" className="rounded-xl bg-coral-soft p-4 text-base text-ink">
