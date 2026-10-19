@@ -173,3 +173,22 @@ describe("truncateText", () => {
     expect(truncateText("abc")).toBe("abc");
   });
 });
+
+describe("F8 bug: the 4,000-char OCR limit must not drop payments silently", () => {
+  // 40 chars per line incl. "\n": 120 lines = 4,800 chars; the limit keeps exactly 100 whole lines.
+  const line = "1 nov 2026 $349.00 Súper pago de prueba";
+  const full = Array.from({ length: 120 }, () => line).join("\n");
+
+  it("a calendar cut by the limit is never 'complete'", () => {
+    const kept = truncateText(full);
+    expect(kept.length).toBe(4000);
+    expect(regexRows(kept, TODAY)).toHaveLength(100); // 20 payments are gone
+    const result = checkCompleteness(regexRows(kept, TODAY), kept, TODAY, { truncated: full.length > 4000 });
+    expect(result).toMatchObject({ status: "incomplete", truncated: true });
+  });
+
+  it("text within the limit is unaffected", () => {
+    const short = Array.from({ length: 12 }, () => line).join("\n");
+    expect(checkCompleteness(regexRows(short, TODAY), short, TODAY, { truncated: false }).status).toBe("complete");
+  });
+});

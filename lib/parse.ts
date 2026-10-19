@@ -12,7 +12,7 @@ export interface ParsedRow {
 
 export type Completeness =
   | { status: "complete"; amounts: number; dates: number }
-  | { status: "incomplete"; amounts: number; dates: number; missing: number }
+  | { status: "incomplete"; amounts: number; dates: number; missing: number; truncated?: boolean }
   | { status: "empty"; amounts: number; dates: number };
 
 const MONTHS: Record<string, number> = {
@@ -145,13 +145,20 @@ export function regexRows(text: string, today = todayIso()): ParsedRow[] {
 
 /**
  * Never undercount silently: totals are allowed only when the raw text has no
- * more amounts than dates AND every row has both a date and an amount.
+ * more amounts than dates AND every row has both a date and an amount AND the
+ * OCR text wasn't cut at MAX_TEXT_LENGTH (cut text can lose whole payments).
  */
-export function checkCompleteness(rows: ParsedRow[], text: string, today = todayIso()): Completeness {
+export function checkCompleteness(
+  rows: ParsedRow[],
+  text: string,
+  today = todayIso(),
+  opts: { truncated?: boolean } = {},
+): Completeness {
   const amounts = countAmounts(text);
   const dates = countDates(text, today);
   if (rows.length === 0) return { status: "empty", amounts, dates };
   const missing = rows.filter((r) => r.due_date === null || r.amount === null).length;
+  if (opts.truncated) return { status: "incomplete", amounts, dates, missing, truncated: true };
   if (amounts > dates || missing > 0) return { status: "incomplete", amounts, dates, missing };
   return { status: "complete", amounts, dates };
 }

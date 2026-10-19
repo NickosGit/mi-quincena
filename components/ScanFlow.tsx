@@ -35,12 +35,12 @@ export function ScanFlow({
   const [result, setResult] = useState<Result | null>(null);
   const [round, setRound] = useState(0);
 
-  async function onText(text: string) {
+  async function onText(text: string, truncated: boolean) {
     setBusy(true);
     setResult(null);
     const { rows, source, notice } = await requestRows(text, !!demo);
     // The server already ran the guard; run it again here against the same raw text.
-    setResult({ rows, source, notice, check: checkCompleteness(rows, text, today) });
+    setResult({ rows, source, notice, check: checkCompleteness(rows, text, today, { truncated }) });
     setRound((r) => r + 1);
     setBusy(false);
   }
@@ -84,7 +84,17 @@ export function ScanFlow({
             </p>
           )}
 
-          {result.check.status === "incomplete" && (
+          {result.check.status === "incomplete" && result.check.truncated && (
+            <div role="alert" className="rounded-xl border-2 border-coral bg-coral-soft p-4 text-ink">
+              <p className="text-lg font-bold">Tu captura tiene más texto del que leemos de una vez.</p>
+              <p className="mt-1 text-base">
+                Pudieron quedar pagos fuera. Revisa que estén todos; si falta alguno, agrégalo o sube la captura en
+                partes.
+              </p>
+            </div>
+          )}
+
+          {result.check.status === "incomplete" && !result.check.truncated && (
             <div role="alert" className="rounded-xl border-2 border-coral bg-coral-soft p-4 text-ink">
               <p className="text-lg font-bold">Encontramos montos sin fecha. Complétalos antes de sumar.</p>
               <p className="mt-1 text-base">

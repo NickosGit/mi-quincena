@@ -16,7 +16,7 @@ export function UploadCapture({
   onText,
   samples,
 }: {
-  onText: (text: string) => void;
+  onText: (text: string, truncated: boolean) => void;
   /** Demo mode: fictional screenshots from /public/demo, read with the same OCR. */
   samples?: { file: string; label: string }[];
 }) {
@@ -52,11 +52,11 @@ export function UploadCapture({
     const preview = URL.createObjectURL(file);
     setPhase({ kind: "reading", progress: 0, preview });
     try {
-      const text = await readImageText(file, (progress) =>
+      const { text, truncated } = await readImageText(file, (progress) =>
         setPhase((p) => (p.kind === "reading" ? { ...p, progress } : p)),
       );
       setPhase({ kind: "idle" });
-      onText(text);
+      onText(text, truncated);
     } catch {
       setPhase({ kind: "error", message: "No pudimos leer la imagen. Intenta con otra captura." });
     } finally {
