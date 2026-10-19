@@ -12,7 +12,14 @@ type Phase = { kind: "idle" } | { kind: "reading"; progress: number; preview: st
  * The image is never uploaded; its object URL is revoked and the input cleared
  * as soon as OCR finishes.
  */
-export function UploadCapture({ onText }: { onText: (text: string) => void }) {
+export function UploadCapture({
+  onText,
+  samples,
+}: {
+  onText: (text: string) => void;
+  /** Demo mode: fictional screenshots from /public/demo, read with the same OCR. */
+  samples?: { file: string; label: string }[];
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
@@ -26,7 +33,22 @@ export function UploadCapture({ onText }: { onText: (text: string) => void }) {
       setPhase({ kind: "error", message: check.error.issues[0].message });
       return;
     }
+    await read(file);
+  }
 
+  async function readSample(file: string) {
+    try {
+      const blob = await fetch(`/demo/${file}`).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.blob();
+      });
+      await read(blob);
+    } catch {
+      setPhase({ kind: "error", message: "No pudimos abrir la captura de ejemplo. Intenta otra vez." });
+    }
+  }
+
+  async function read(file: Blob) {
     const preview = URL.createObjectURL(file);
     setPhase({ kind: "reading", progress: 0, preview });
     try {
@@ -63,6 +85,21 @@ export function UploadCapture({ onText }: { onText: (text: string) => void }) {
           aria-describedby="upload-help"
         />
       </label>
+      {samples && (
+        <div className="grid grid-cols-2 gap-3">
+          {samples.map((s) => (
+            <button
+              key={s.file}
+              type="button"
+              disabled={reading}
+              onClick={() => readSample(s.file)}
+              className="min-h-12 rounded-xl border border-line bg-card px-3 text-base font-semibold disabled:opacity-50"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
       <p id="upload-help" className="text-base text-muted">
         Captura de pantalla de tu calendario de pagos (PNG, JPG o WEBP, hasta 8 MB). Se lee en tu
         teléfono y no se sube ni se guarda.

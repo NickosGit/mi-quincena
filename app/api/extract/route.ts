@@ -3,17 +3,16 @@ import { geminiRows } from "@/lib/gemini";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { extractBodySchema } from "@/lib/schemas";
 import { getUser } from "@/lib/supabase/server";
+import { todayInMexico } from "@/lib/today";
+
+// Gemini can take ~20 s on a blurry calendar; give the function room (Vercel caps Hobby at 60 s).
+export const maxDuration = 60;
 
 const MAX_BODY_CHARS = 20_000;
 const allow = createRateLimiter(20, 10 * 60 * 1000);
 
 function fail(status: number, error: string) {
   return Response.json({ error }, { status });
-}
-
-/** Today's date in Mexico City (Vercel functions run in UTC). */
-function todayInMexico(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date());
 }
 
 /** POST { text, demo? } → { rows, source, check, fallback? }. OCR text in, never an image. */

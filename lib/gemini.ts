@@ -64,7 +64,7 @@ export async function geminiRows(text: string, today: string, config: GeminiConf
         responseSchema: RESPONSE_SCHEMA,
       },
     }),
-    signal: AbortSignal.timeout(config.timeoutMs ?? 20_000),
+    signal: AbortSignal.timeout(config.timeoutMs ?? 45_000),
   });
   if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
 
